@@ -1,0 +1,43 @@
+ESTO VA EN LANDMARKS_UTILS.PY
+
+def Dlib_Model(path_imagen):
+    cap = cv2.imread(path_imagen)
+    # save the predicted values for the model
+    y_pred = []
+    face_detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    frame = imutils.resize(cap, width=1000)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    coordinates_bboxes = face_detector(gray, 1)
+    for c in coordinates_bboxes:
+        x_ini, y_ini, x_fin, y_fin = c.left(), c.top(), c.right(), c.bottom()
+        shape = predictor(gray, c)
+    for i in range(0, 68):
+        x, y = shape.part(i).x, shape.part(i).y
+        y_pred.append([x, y])
+     
+    width_face = two_points_distance(x_ini, y_ini, x_fin, y_fin)
+    height_face = two_points_distance(x_ini, y_ini, x_fin, y_fin)
+    Df = calculate_DF(width_face, height_face)
+    y_pred = np.array(y_pred, dtype=np.float32).reshape((-1, 2))
+    return y_pred , Df
+
+ESTO VA EN MAIN_ALL.IPYNB
+
+def nme_per_method(method):
+    NME = []
+    failure_rate = 0
+    for i in range(1, n_images+1):
+        y_true = lutlis.read_landmarks("Helen_testset2/y_true/chao ("+str(i)+").pts")
+        if method==1:
+            y_pred , Df = lutlis.Dlib_Model("Helen_testset2/y_pred/hola"+" ("+str(i)+")"+".jpg")
+        elif method==2:
+            y_pred , Df = lutlis.kevin_vinueza("Helen_testset2/y_pred/hola"+" ("+str(i)+")"+".jpg")
+        nme68 = lutlis.my_NME_image(y_pred, y_true)
+        NME.append(nme68)
+        if nme68 >= 0.08:
+            failure_rate = failure_rate + 1
+    NME.sort() # ascending order
+    print("NME averaged:", np.mean(NME))
+    print("Failure rate:", (failure_rate/n_images)*100)
+    return NME
